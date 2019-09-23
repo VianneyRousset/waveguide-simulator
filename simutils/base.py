@@ -72,21 +72,10 @@ class SimulationBase:
 
     def get_meep_comp(self, name):
         return {
-            'ex': mp.Ex,
-            'ey': mp.Ey,
-            'ez': mp.Ez,
-            'bx': mp.Bx,
-            'by': mp.By,
-            'bz': mp.Bz,
-            'dx': mp.Dx,
-            'dy': mp.Dy,
-            'dz': mp.Dz,
-            'hx': mp.Hx,
-            'hy': mp.Hy,
-            'hz': mp.Hz,
-            'sx': mp.Sx,
-            'sy': mp.Sy,
-            'sz': mp.Sz,
-            'eps': mp.Dielectric,
-            'mu': mp.Permeability,
-        }[name]
+            'ex': mp.Ex, 'ey': mp.Ey, 'ez': mp.Ez, 'ep': mp.Ep, 'er': mp.Er,
+            'bx': mp.Bx, 'by': mp.By, 'bz': mp.Bz, 'bp': mp.Bp, 'br': mp.Br,
+            'dx': mp.Dx, 'dy': mp.Dy, 'dz': mp.Dz, 'dp': mp.Dp, 'dr': mp.Dr,
+            'hx': mp.Hx, 'hy': mp.Hy, 'hz': mp.Hz, 'hp': mp.Hp, 'hr': mp.Hr,
+            'sx': mp.Sx, 'sy': mp.Sy, 'sz': mp.Sz, 'sp': mp.Sp, 'sr': mp.Sr,
+            'p': mp.P, 'eps': mp.Dielectric, 'mu': mp.Permeability,
+        }[name.lower()]

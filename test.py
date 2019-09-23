@@ -3,13 +3,7 @@
 from simutils import Simulation, Device
 from simutils import inspector
 from simutils.inspector.profiler import WaveguideProfiler
-import meep as mp
 from matplotlib import pyplot as plt
-
-#from math import ceil, floor
-#import matplotlib.pyplot as plt
-#from scipy.optimize import minimize
-#from numpy.polynomial.polynomial import Polynomial
 
 
 def prepare_geom():
@@ -25,7 +19,7 @@ def prepare_geom():
 if __name__ == '__main__':
 
     # geometry and material
-    from simutils.design.shape import World, Waveguide
+    from simutils.design.shape import World
     geom = prepare_geom()
     world = World()
     world['waveguide'] = geom[0]
@@ -33,10 +27,10 @@ if __name__ == '__main__':
 
     sim = Simulation('test', dev, res=10)
 
-    sim.create_source(wavelength=1.55,
-                      pos=[0, 0],
-                      width=8,
-                      comp='ez')
+    sim.create_waveguide_source(wavelength=1.55,
+                                pos=[0, 0],
+                                width=8,
+                                comp='ez')
     sim.run(120, dt=1)
 
     # inspect

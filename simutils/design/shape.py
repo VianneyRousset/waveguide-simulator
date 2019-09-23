@@ -114,7 +114,7 @@ class Waveguide(Shape, Parent):
         segments = self.split_line(line)
         progress = np.cumsum([seg.length for seg in segments]) / line.length
         for p, seg in zip(progress, segments):
-            if percent < p:
+            if percent <= p:
                 dx, dy = np.asarray(seg.coords[1]) - np.asarray(seg.coords[0])
                 return np.arctan(dy / dx)
 

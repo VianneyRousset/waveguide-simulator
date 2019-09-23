@@ -3,83 +3,103 @@
 from simutils import Simulation, Device
 from simutils import inspector
 from simutils.inspector.profiler import WaveguideProfiler
-import meep as mp
 from matplotlib import pyplot as plt
-
-#from math import ceil, floor
-#import matplotlib.pyplot as plt
-#from scipy.optimize import minimize
-#from numpy.polynomial.polynomial import Polynomial
+import numpy as np
 
 
-def prepare_geom():
-    from simutils.design.shape import LineWaveguide, SlineWaveguide
+def prepare_geom(linewidth, radius):
+    from simutils.design.shape import World, LineWaveguide, ArcWaveguide
     from simutils.design.space import attach
-    linewidth = 1
-    return attach(
-        LineWaveguide(linewidth, 20, rpos=[-10, 0]),
-        SlineWaveguide(linewidth, 30, 10),
-        LineWaveguide(linewidth, 10))
+    line1, arc, line2 = attach(
+        LineWaveguide(linewidth, 15, rpos=[-5, 0]),
+        ArcWaveguide(linewidth, radius, np.radians(-90), np.radians(90)),
+        LineWaveguide(linewidth, -15)
+    )
+    world = World()
+    world['waveguide'] = line1
+    return world, line1, arc, line2
 
 
 if __name__ == '__main__':
 
+    wavelength = 1.55
+    linewidth = 0.6
+    radius = 4
+    comp = 'ez'
+    duration = 100
+
+    # SIMULATION
+
     # geometry and material
-    from simutils.design.shape import World, Waveguide
-    geom = prepare_geom()
-    world = World()
-    world['waveguide'] = geom[0]
-    dev = Device(world, 'vacuum', 'silica')
+    world, _, arc, _ = prepare_geom(linewidth, radius)
+    dev = Device(world, 'vacuum', 'siliconNitride')
 
-    sim = Simulation('test', dev, res=10)
+    # saving shape
 
-    sim.create_source(wavelength=1.55,
-                      pos=[0, 0],
-                      width=8,
-                      comp='ez')
-    sim.run(120, dt=1)
+    # sources
+    sim = Simulation('propagation_losses', dev, res=20)
 
-    # inspect
+    sim.create_waveguide_source(wavelength=wavelength,
+                                pos=[0, 0],
+                                width=8,
+                                comp=comp)
+    sim.run(duration, dt=1)
+
+    # INSPECTION
     ins = inspector.Inspector(sim)
-    prof = WaveguideProfiler(sim.name, 'wg_profile', geom[0], 0.6, margin=2)
+
+    # profilers
+    print('Computing intensities...')
+    N_prof = 32
+    wg_percents = np.linspace(0, 1, N_prof)
+    wg_length = 2 * np.pi * radius
+    profilers = [WaveguideProfiler(sim.name, f'wg_profile_{n}', arc, n,
+                                   margin=4)
+                 for n in wg_percents]
+
+    f = ins[comp].abs
+    comp_abs_sum = [p.get_profile(f).sum for p in profilers]
+    f = ins['p'].abs
+    p_abs_sum = [p.get_profile(f).sum for p in profilers]
 
     # epsilon
     f = ins['eps']
     fig, ax = plt.subplots()
     f.plot(ax, 'normal')
-    prof.plot(ax)
     ax.set_title(f.name.replace('_', '\_'))
     fig.savefig(f.filepath)
     print(f'Image saved to {f.filepath}')
     plt.close()
 
-    # ez real
-    f = ins['ez'].real
-    fig, [ax1, ax2] = plt.subplots(1, 2)
-
-    f.plot(ax1, 'symetric')
-    prof.plot(ax1)
-    ins.shape.plot(ax1)
-
-    prof.get_profile(ins['eps']).plot(ax2.twinx(), color='orange', label='eps')
-    prof.get_profile(f).plot(ax2, label=f.name.replace('_', '\_'))
-
+    # comp real
+    f = ins[comp].real
+    fig, ax = plt.subplots()
+    f.plot(ax, 'symetric')
+    ins.shape.plot(ax)
     fig.savefig(f.filepath)
     print(f'Image saved to {f.filepath}')
 
-    # ez abs
-    f = ins['ez'].abs
-    fig, [ax1, ax2] = plt.subplots(1, 2)
+    # intensities
+    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
 
+    f = ins[comp].abs
     f.plot(ax1, 'normal')
-    prof.plot(ax1)
     ins.shape.plot(ax1)
+    for p in profilers:
+        p.plot(ax1)
 
-    prof.get_profile(ins['eps']).plot(ax2.twinx(), color='orange', label='eps')
-    prof.get_profile(f).plot(ax2, label=f.name.replace('_', '\_'))
+    f = ins['p'].abs
+    f.plot(ax2, 'normal')
+    ins.shape.plot(ax2)
+    for p in profilers:
+        p.plot(ax2)
 
-    fig.savefig(f.filepath)
-    print(f'Image saved to {f.filepath}')
+    ax3.plot(wg_percents * wg_length, comp_abs_sum)
+    ax4.plot(wg_percents * wg_length, p_abs_sum)
+
+    filepath = str(f.directory / 'comp_p.pdf')
+    fig.savefig(filepath)
+    print(f'Image saved to {filepath}')
 
     plt.close()
     print('End')

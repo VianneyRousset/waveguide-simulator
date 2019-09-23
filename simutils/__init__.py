@@ -12,6 +12,7 @@ class Device:
     MATERIALS = {
         'vacuum': mp.Medium(epsilon=1),
         'silica': mp.Medium(epsilon=3.9),
+        'siliconNitride': mp.Medium(epsilon=7.5)
     }
 
     def __init__(self, shape, default_material, shape_material):
@@ -59,10 +60,10 @@ class Simulation(SimulationBase):
     def set_resolution(self, res):
         self.resolution = res
 
-    def create_source(self, wavelength, pos, width, comp, direction=[1, 0]):
+    def create_waveguide_source(self, wavelength, pos, width, comp,
+                                direction=[1, 0]):
         from numpy import pi
         k = mp.Vector3(*direction).unit() * 2 * pi / wavelength
-        print('>>> ', k)
         s = mp.EigenModeSource(src=mp.ContinuousSource(wavelength=wavelength),
                                center=mp.Vector3(*pos),
                                size=mp.Vector3(y=width),
@@ -70,17 +71,18 @@ class Simulation(SimulationBase):
                                eig_kpoint=mp.Vector3(0.4),
                                eig_band=1,
                                eig_parity=mp.EVEN_Y+mp.ODD_Z,
-                               eig_match_freq=True)
+                               eig_match_freq=True,
+                               component=self.get_meep_comp(comp))
         self.sources.append(s)
 
-
-#        src = mp.Source(mp.ContinuousSource(wavelength=wavelength),
-#                        center=mp.Vector3(*pos),
-#                        size=mp.Vector3(*size))
-#        self.sources.append(src)
+    def create_source(self, wavelength, pos, size, comp):
+        src = mp.Source(mp.ContinuousSource(wavelength=wavelength),
+                        center=mp.Vector3(*pos),
+                        size=mp.Vector3(*size),
+                        component=self.get_meep_comp(comp))
+        self.sources.append(src)
 
     def run(self, duration, dt):
-        print(f'>>> size: {self.size}, sim_size: {self.cell_size}, center: {self.center}, extent: {self.extent}')
         boundary_layers = self._create_boundary_layers()
         self.sim = mp.Simulation(cell_size=self.cell_size,
                                  geometry_center=self.center,
