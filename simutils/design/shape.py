@@ -24,9 +24,13 @@ class Shape(Origin, Space):
     def polygons(self):
         raise NotImplementedError()
 
-    def plot(self, ax, **kwargs):
+    def plot(self, ax, *args, **kwargs):
+        if 'linewidth' not in kwargs:
+            kwargs['linewidth'] = 0.4
+        if 'color' not in kwargs:
+            kwargs['color'] = 'orange'
         for p in self.polygons:
-            ax.plot(*p.exterior.xy, **kwargs)
+            ax.plot(*p.exterior.xy, *args, **kwargs)
 
     def plot_debug(self, ax, **kwargs):
         ax.plot(*self.pos, 'x', **kwargs)
@@ -46,11 +50,14 @@ class Shape(Origin, Space):
 
 class World(Shape, Parent, dict):
 
-    def __init__(self, margin=4, rpos=[0, 0]):
+    def __init__(self, margins=4, rpos=[0, 0]):
         Origin.__init__(self, rpos)
         Parent.__init__(self)
         dict.__init__(self)
-        self.margin = margin
+        if type(margins) in {float, int}:
+            self.margins = np.asarray([margins]*4)
+        else:
+            self.margins = np.asarray(margins)
 
     def __iter__(self):
         return iter(self.values())
@@ -70,15 +77,16 @@ class World(Shape, Parent, dict):
     def extent(self):
         extent = self.compute_total_extent([s.extent for s in self])
         xmin, xmax, ymin, ymax = extent
-        m = self.margin
-        return [xmin - m, xmax + m, ymin - m, ymax + m]
+        m = self.margins
+        return [xmin - m[0], xmax + m[1], ymin - m[2], ymax + m[3]]
 
 
-class Waveguide(Shape, Parent):
+class Waveguide(Shape, Parent, Child):
 
     def __init__(self, linewidth, rpos=[0, 0]):
         Shape.__init__(self, rpos)
         Parent.__init__(self)
+        Child.__init__(self)
         self.linewidth = linewidth
 
     @property

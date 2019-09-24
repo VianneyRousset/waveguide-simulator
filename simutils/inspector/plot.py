@@ -11,6 +11,10 @@ class Plot:
         self.extension = extension
         self.ensure_directory()
 
+    def rename(self, name):
+        self.name = name
+        return self
+
     @property
     def directory(self):
         return self.RESULTS_DIR / self.sim_name / 'plots'

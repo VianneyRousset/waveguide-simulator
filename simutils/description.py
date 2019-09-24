@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import meep as mp
-from . import dataio
+# from . import dataio
 from pathlib import Path
 
 

@@ -2,7 +2,7 @@
 
 import meep as mp
 from meep import Vector3
-from . import dataio
+# from . import dataio
 
 
 class SimulationOutputsBase(dict):

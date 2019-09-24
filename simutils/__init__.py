@@ -2,24 +2,18 @@
 
 import meep as mp
 from meep import Vector3
-from . import dataio
+# from . import dataio
 from pathlib import Path
 from .base import SimulationBase, SimulationOutputsBase
 
 
 class Device:
 
-    MATERIALS = {
-        'vacuum': mp.Medium(epsilon=1),
-        'silica': mp.Medium(epsilon=3.9),
-        'siliconNitride': mp.Medium(epsilon=7.5)
-    }
-
-    def __init__(self, shape, default_material, shape_material):
+    def __init__(self, shape, n_default, n_shape):
         self.shape = shape
         self.polygons = shape.polygons
-        self.default_material = self.MATERIALS[default_material]
-        self.shape_material = self.MATERIALS[shape_material]
+        self.default_material = mp.Medium(index=n_default)
+        self.shape_material = mp.Medium(index=n_shape)
 
     def at(self, p):
         if self.polygons.contains(p):
@@ -56,11 +50,12 @@ class Simulation(SimulationBase):
         SimulationBase.__init__(self, name, dev, pml)
         self.sources = []
         self.resolution = res
+        self.profilers = {}
 
     def set_resolution(self, res):
         self.resolution = res
 
-    def create_waveguide_source(self, wavelength, pos, width, comp,
+    def create_waveguide_source(self, wavelength, pos, width,
                                 direction=[1, 0]):
         from numpy import pi
         k = mp.Vector3(*direction).unit() * 2 * pi / wavelength
@@ -71,8 +66,7 @@ class Simulation(SimulationBase):
                                eig_kpoint=mp.Vector3(0.4),
                                eig_band=1,
                                eig_parity=mp.EVEN_Y+mp.ODD_Z,
-                               eig_match_freq=True,
-                               component=self.get_meep_comp(comp))
+                               eig_match_freq=True)
         self.sources.append(s)
 
     def create_source(self, wavelength, pos, size, comp):
@@ -82,7 +76,7 @@ class Simulation(SimulationBase):
                         component=self.get_meep_comp(comp))
         self.sources.append(src)
 
-    def run(self, duration, dt):
+    def run(self, duration):
         boundary_layers = self._create_boundary_layers()
         self.sim = mp.Simulation(cell_size=self.cell_size,
                                  geometry_center=self.center,
@@ -92,10 +86,17 @@ class Simulation(SimulationBase):
                                  sources=self.sources,
                                  boundary_layers=boundary_layers,
                                  force_complex_fields=True)
+
+        # adding flux regions
+        for k, v in self.profilers.items():
+            v.flux = self.sim.add_flux(1 / 1.55, 1, 256, v.get_flux_region())
+
         self.sim.run(mp.in_volume(self.dev.volume), until=duration)
         mp.all_wait()
 
     def __getitem__(self, k):
+        if k in {'pwr'}:
+            return self.sim.get_tot_pwr()
         return self.sim.get_array(center=self.center, size=self.size,
                                   component=self.get_meep_comp(k))
 
