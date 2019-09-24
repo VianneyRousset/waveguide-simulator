@@ -109,7 +109,7 @@ def compute_insertion(thickness, n_eff, width, radius, resolution,
 if __name__ == '__main__':
 
     param = {
-        'resolution': 32,
+        'resolution': 2,
         'wavelength': 1.55,
         'pml': 4,
     }
