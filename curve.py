@@ -44,12 +44,12 @@ def plot_field(f, mode='normal', shape=None, prefix=None, regions=[],
     plt.close()
 
 
-def simulate(linewidth, radius, n_eff, resolution, wavelength, pml):
+def simulate(n_eff, width, radius, resolution, wavelength, pml):
 
     duration = 1.5 * (4.5 + 0.5 * np.pi * radius + 5) * n_eff
 
     # geometry and material
-    world, line1, arc, line2 = prepare_geom(linewidth, radius, pml)
+    world, line1, arc, line2 = prepare_geom(width, radius, pml)
     dev = Device(world, const.n_SiO2, n_eff)
 
     # sources
@@ -72,13 +72,13 @@ def simulate(linewidth, radius, n_eff, resolution, wavelength, pml):
     return sim, regions
 
 
-def inspect(sim, regions, linewidth, radius, n_eff):
+def inspect(sim, regions, name):
 
     ins = inspector.Inspector(sim)
     matplotlib.rc('text', usetex=False)
 
     # plot
-    prefix = f'w{linewidth:05.2f}_r{radius:05.2f}_n{n_eff:05.2f}_'
+    prefix = f'{name}_'
     plot_field(ins['eps'], 'normal', sim.dev.shape, prefix)
     for i in 'ex ey'.split():
         plot_field(ins[i].abs, 'normal', sim.dev.shape, prefix)
@@ -96,13 +96,13 @@ def inspect(sim, regions, linewidth, radius, n_eff):
     return insertion_losses
 
 
-def compute_insertion(linewidth, radius, n_eff, resolution, wavelength, pml):
-    name = f'w{linewidth:04.2f}_r{radius:05.2f}'
+def compute_insertion(thickness, n_eff, width, radius, resolution,
+                      wavelength, pml):
+    name = f'h{thickness:04.3f}_w{width:04.2f}_n{n_eff:04.3}_r{radius:05.2f}'
     print(f'Computing insertion for {name}')
     return 42
-    sim, regions = simulate(linewidth, radius, n_eff, resolution,
-                            wavelength, pml)
-    losses = inspect(sim, regions, linewidth, radius, n_eff)
+    sim, regions = simulate(n_eff, width, radius, resolution, wavelength, pml)
+    losses = inspect(sim, regions, name)
     print(f'r{name} >>> {losses*100:05.2f}%')
     return losses
 
@@ -126,9 +126,9 @@ if __name__ == '__main__':
                   (0.500,       1.7952,     0.60),
                   (0.500,       1.7952,     0.75)]
 
-    insertions = [[compute_insertion(w, r, n, **param)
+    insertions = [[compute_insertion(h, n, w, r, **param)
                    for r in radii]
-                  for _, n, w in waveguides]
+                  for h, n, w in waveguides]
 
     # save summary
     waveguides = np.asarray(waveguides).T
