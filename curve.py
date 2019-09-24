@@ -100,7 +100,6 @@ def compute_insertion(thickness, n_eff, width, radius, resolution,
                       wavelength, pml):
     name = f'h{thickness:04.3f}_w{width:04.2f}_n{n_eff:04.3}_r{radius:05.2f}'
     print(f'Computing insertion for {name}')
-    return 42
     sim, regions = simulate(n_eff, width, radius, resolution, wavelength, pml)
     losses = inspect(sim, regions, name)
     print(f'r{name} >>> {losses*100:05.2f}%')
