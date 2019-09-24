@@ -62,11 +62,12 @@ class Simulation(SimulationBase):
         s = mp.EigenModeSource(src=mp.ContinuousSource(wavelength=wavelength),
                                center=mp.Vector3(*pos),
                                size=mp.Vector3(y=width),
-                               direction=mp.NO_DIRECTION,
+                               direction=mp.X,
                                eig_kpoint=mp.Vector3(0.4),
                                eig_band=1,
-                               eig_parity=mp.EVEN_Y+mp.ODD_Z,
-                               eig_match_freq=True)
+                               eig_parity=mp.EVEN_Z+mp.ODD_Y,
+                               eig_match_freq=True,
+                               component=mp.ALL_COMPONENTS)
         self.sources.append(s)
 
     def create_source(self, wavelength, pos, size, comp):
@@ -96,9 +97,9 @@ class Simulation(SimulationBase):
 
     def __getitem__(self, k):
         if k in {'pwr'}:
-            return self.sim.get_tot_pwr()
+            return self.sim.get_tot_pwr(), self.cell_extent
         return self.sim.get_array(center=self.center, size=self.size,
-                                  component=self.get_meep_comp(k))
+                                  component=self.get_meep_comp(k)), self.extent
 
     def _create_boundary_layers(self):
         return [mp.PML(self.pml)]

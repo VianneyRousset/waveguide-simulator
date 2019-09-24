@@ -1,6 +1,7 @@
 from .plot import Plot
 import numpy as np
 
+
 class Field(Plot):
 
     def __init__(self, sim_name, name, data, extent, **kwargs):

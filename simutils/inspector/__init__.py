@@ -14,4 +14,5 @@ class Inspector:
         return Polygons(self.sim.name, 'shape', self.sim.dev.shape.polygons)
 
     def __getitem__(self, k):
-        return Field(self.sim.name, k, self.sim[k], self.sim.extent)
+        data, extent = self.sim[k]
+        return Field(self.sim.name, k, data, extent)

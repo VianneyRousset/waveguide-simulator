@@ -124,6 +124,8 @@ class Waveguide(Shape, Parent, Child):
         for p, seg in zip(progress, segments):
             if percent <= p:
                 dx, dy = np.asarray(seg.coords[1]) - np.asarray(seg.coords[0])
+                if dx == 0 and dy != 0:
+                    return 0.5 * np.pi if dy > 0 else -0.5 * np.pi
                 return np.arctan(dy / dx)
 
     def split_line(self, line):
@@ -168,7 +170,9 @@ class ArcWaveguide(Waveguide, Arc):
 
     def __init__(self, linewidth, radius, angle0=0, angle1='full', res=64,
                  rpos=[0, 0]):
-        self.radius, self.angle0, self.angle1 = radius, angle0, angle1
+        self.radius = radius
+        self.angle0 = np.radians(angle0)
+        self.angle1 = np.radians(angle1)
         self.res = res
         Waveguide.__init__(self, linewidth, rpos)
 

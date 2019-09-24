@@ -67,6 +67,12 @@ class SimulationBase:
         return self.dev.center
 
     @property
+    def cell_extent(self):
+        x, y = list(self.center)[:2]
+        w, h = list(self.cell_size)[:2]
+        return [x - w / 2, x + w / 2, y - h / 2, y + h / 2]
+
+    @property
     def cell_size(self):
         return self.size + 2 * self.pmlv
 
