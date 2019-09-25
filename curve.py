@@ -11,6 +11,7 @@ import numpy as np
 from sys import exit
 import json
 from subprocess import run
+import meep as mp
 
 
 def prepare_geom(linewidth, radius, pml):
@@ -87,6 +88,10 @@ def inspect(sim, regions, name):
     plot_field(ins['sx'], 'symetric', sim.dev.shape, prefix)
     plot_field(ins['sy'], 'symetric', sim.dev.shape, prefix)
 
+    # save
+    for f in 'esp ex ey sx sy pwr'.split():
+        np.save(f'results/curve/{f}.npy', ins[f].data)
+
     # losses
     f = ins['pwr']
     reg_start, reg_end = regions
@@ -104,27 +109,28 @@ def compute_insertion(thickness, n_eff, width, radius, resolution,
     sim, regions = simulate(n_eff, width, radius, resolution, wavelength, pml)
     losses = inspect(sim, regions, name)
     print(f'r{name} >>> {losses*100:05.2f}%')
-    run(['curl', f'https://api.simplepush.io/send/mjjFz4/Simulation step/{name}'
-         f'  {losses*100:05.2f}'])
+    if mp.am_master():
+        run(['curl', f'https://api.simplepush.io/send/mjjFz4/Simulation step/{name}'
+             f'  {losses*100:05.2f}'])
     return losses
 
 
 if __name__ == '__main__':
 
     param = {
-        'resolution': 16,
+        'resolution': 32,
         'wavelength': 1.55,
         'pml': 4,
     }
 
-    radii = [200, 100, 50]
+    radii = [50, 100, 200]
 
     #              thickness    n_eff       width
     waveguides = [
                   (0.200,       1.5842,     0.80),
-                  (0.200,       1.5842,     1.00),
+#                  (0.200,       1.5842,     1.00),
                   (0.200,       1.5842,     1.10),
-                  (0.500,       1.7952,     0.50),
+ #                 (0.500,       1.7952,     0.50),
                   (0.500,       1.7952,     0.60),
                   (0.500,       1.7952,     0.75)]
 
