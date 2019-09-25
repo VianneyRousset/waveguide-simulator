@@ -79,25 +79,34 @@ def inspect(sim, regions, name):
     ins = inspector.Inspector(sim)
     matplotlib.rc('text', usetex=False)
 
-    # plot
-    prefix = f'{name}_'
-    plot_field(ins['eps'], 'normal', sim.dev.shape, prefix)
-    for i in 'ex ey'.split():
-        plot_field(ins[i].abs, 'normal', sim.dev.shape, prefix)
-        plot_field(ins[i].real, 'symetric', sim.dev.shape, prefix)
-    plot_field(ins['sx'], 'symetric', sim.dev.shape, prefix)
-    plot_field(ins['sy'], 'symetric', sim.dev.shape, prefix)
-
     # save
-    for f in 'esp ex ey sx sy pwr'.split():
-        np.save(f'results/curve/{f}.npy', ins[f].data)
+    try:
+        for f in 'eps ex ey sx sy pwr'.split():
+            np.save(f'results/curve/{f}.npy', ins[f].data)
+    except BaseException as e:
+        print(f'Saving failed: {e}')
+
+    # plot
+    try:
+        prefix = f'{name}_'
+        plot_field(ins['eps'], 'normal', sim.dev.shape, prefix)
+        for i in 'ex ey'.split():
+            plot_field(ins[i].abs, 'normal', sim.dev.shape, prefix)
+            plot_field(ins[i].real, 'symetric', sim.dev.shape, prefix)
+        plot_field(ins['sx'], 'symetric', sim.dev.shape, prefix)
+        plot_field(ins['sy'], 'symetric', sim.dev.shape, prefix)
+    except BaseException as e:
+        print(f'Plotting failed: {e}')
 
     # losses
-    f = ins['pwr']
-    reg_start, reg_end = regions
-    insertion_losses = reg_end.cut(f).density / reg_start.cut(f).density
-    plot_field(ins['pwr'], 'symetric', sim.dev.shape, prefix, regions,
-               title=fr'Insertion: ${insertion_losses*100:05.2f}\%$')
+    try:
+        f = ins['pwr']
+        reg_start, reg_end = regions
+        insertion_losses = reg_end.cut(f).density / reg_start.cut(f).density
+        plot_field(ins['pwr'], 'symetric', sim.dev.shape, prefix, regions,
+                   title=fr'Insertion: ${insertion_losses*100:05.2f}\%$')
+    except BaseException as e:
+        print(f'Plotting pwr failed: {e}')
 
     return insertion_losses
 
