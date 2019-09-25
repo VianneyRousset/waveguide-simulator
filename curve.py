@@ -82,7 +82,7 @@ def inspect(sim, regions, name):
     # save
     try:
         for f in 'eps ex ey sx sy pwr'.split():
-            np.save(f'results/curve/{f}.npy', ins[f].data)
+            np.save(f'results/curve/{name}_{f}.npy', ins[f].data)
     except BaseException as e:
         print(f'Saving failed: {e}')
 
@@ -118,12 +118,16 @@ def compute_insertion(thickness, n_eff, width, radius, resolution,
     sim, regions = simulate(n_eff, width, radius, resolution, wavelength, pml)
     losses = inspect(sim, regions, name)
     print(f'r{name} >>> {losses*100:05.2f}%')
-    if mp.am_master():
-        run(['curl', f'https://api.simplepush.io/send/mjjFz4/Simulation step/{name}'
-             f'  {losses*100:05.2f}'])
-        run(['git', 'add', '.'])
-        run(['git', 'commit', '-m', 'sim results'])
-        run(['git', 'push'])
+    try:
+        if mp.am_master():
+            run(['curl', f'https://api.simplepush.io/send/mjjFz4/Simulation step/{name}'
+                 f'  {losses*100:05.2f}'])
+            run(['git', 'add', '.'])
+            run(['git', 'commit', '-m', 'sim results'])
+            run(['git', 'push'])
+            print('Pushed')
+    except BaseException as e:
+        print(f'Push failed: {e}')
     return losses
 
 
