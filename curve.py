@@ -112,6 +112,9 @@ def compute_insertion(thickness, n_eff, width, radius, resolution,
     if mp.am_master():
         run(['curl', f'https://api.simplepush.io/send/mjjFz4/Simulation step/{name}'
              f'  {losses*100:05.2f}'])
+        run(['git', 'add', '.'])
+        run(['git', 'commit', '-m', 'sim results'])
+        run(['git', 'push'])
     return losses
 
 
