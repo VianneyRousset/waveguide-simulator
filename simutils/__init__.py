@@ -5,6 +5,7 @@ from meep import Vector3
 # from . import dataio
 from pathlib import Path
 from .base import SimulationBase, SimulationOutputsBase
+import numpy as np
 
 
 class Device:
@@ -56,21 +57,29 @@ class Simulation(SimulationBase):
         self.resolution = res
 
     def create_waveguide_source(self, wavelength, pos, width,
-                                direction=[1, 0]):
-        from numpy import pi
-        k = mp.Vector3(*direction).unit() * 2 * pi / wavelength
+                                direction='+x', comp='y'):
+
+        # parity
+        parity = mp.ODD_Z if comp == 'z' else mp.EVEN_Z
+
+        # size
+        size = mp.Vector3(y=width) if 'x' in direction else mp.Vector3(x=width)
+
+        # kpoints
+        angles = {'+x': 0, '+y': 90, '-x': 180, '-y': 270}
+        if direction in angles:
+            angle = np.radians(angles[direction])
+            direction = mp.Vector3(0.4).rotate(mp.Vector3(z=1), angle)
+
         s = mp.EigenModeSource(src=mp.ContinuousSource(wavelength=wavelength),
-                               center=mp.Vector3(*pos),
-                               size=mp.Vector3(y=width),
-                               direction=mp.X,
-                               eig_kpoint=mp.Vector3(0.4),
-                               eig_band=1,
-                               eig_parity=mp.EVEN_Z+mp.ODD_Y,
+                               center=mp.Vector3(*pos), size=size,
+                               direction=mp.NO_DIRECTION, eig_kpoint=direction,
+                               eig_band=1, eig_parity=parity,
                                eig_match_freq=True,
                                component=mp.ALL_COMPONENTS)
         self.sources.append(s)
 
-    def create_source(self, wavelength, pos, size, comp):
+    def create_source(self, wavelength, pos, size, comp='y'):
         src = mp.Source(mp.ContinuousSource(wavelength=wavelength),
                         center=mp.Vector3(*pos),
                         size=mp.Vector3(*size),
