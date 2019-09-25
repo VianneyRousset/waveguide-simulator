@@ -10,6 +10,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 from sys import exit
 import json
+from subprocess import run
 
 
 def prepare_geom(linewidth, radius, pml):
@@ -103,18 +104,20 @@ def compute_insertion(thickness, n_eff, width, radius, resolution,
     sim, regions = simulate(n_eff, width, radius, resolution, wavelength, pml)
     losses = inspect(sim, regions, name)
     print(f'r{name} >>> {losses*100:05.2f}%')
+    run(['curl', f'https://api.simplepush.io/send/mjjFz4/Simulation step/{name}'
+         f'  {losses*100:05.2f}'])
     return losses
 
 
 if __name__ == '__main__':
 
     param = {
-        'resolution': 2,
+        'resolution': 16,
         'wavelength': 1.55,
         'pml': 4,
     }
 
-    radii = [50, 100, 200, 500]
+    radii = [200, 100, 50]
 
     #              thickness    n_eff       width
     waveguides = [
@@ -142,3 +145,9 @@ if __name__ == '__main__':
     print(json.dumps(summary, indent=4, sort_keys=True))
     with open('results/curve/summary.json', mode='w') as f:
         json.dump(summary, f, indent=4, sort_keys=True)
+
+    try:
+        run(['curl', f'https://api.simplepush.io/send/mjjFz4/Simulation Finished/'
+             'goood'])
+    except BaseException as e:
+        pass
